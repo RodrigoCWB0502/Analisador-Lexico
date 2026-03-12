@@ -17,4 +17,4 @@ Equipe: 05
 
 ---
 
-<small>[Github](https://github.com/RodrigoCWB0502/Analisador-Lexico)</small>
+<sub>[Github](https://github.com/RodrigoCWB0502/Analisador-Lexico)</sub>
