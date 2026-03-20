@@ -487,3 +487,483 @@ class ExecutorExpressao:
             return a ** int(b)
         return None
 
+# =============================================================================
+# PARTE 3 - GERADOR DE ASSEMBLY ARMv7
+# =============================================================================
+
+class GeradorAssembly:
+    """
+    Gera código Assembly ARMv7 compatível com CPUlator DE1-SoC (v16.1).
+
+    O Assembly gerado utiliza:
+    - Registradores VFP (d0-d15) para operações com ponto flutuante 64 bits
+    - Uma pilha de software para empilhar/desempilhar valores double
+    - Endereços de memória do DE1-SoC para I/O (LEDs, HEX displays)
+
+    IMPORTANTE: Todo cálculo é feito no Assembly. O Python apenas gera o código.
+    """
+
+    # Endereços de I/O do DE1-SoC
+    ADDR_LEDR    = "0xFF200000"   # LEDs vermelhos
+    ADDR_HEX3_0  = "0xFF200020"   # Displays 7-seg HEX3-HEX0
+    ADDR_HEX5_4  = "0xFF200030"   # Displays 7-seg HEX5-HEX4
+    ADDR_SW      = "0xFF200040"   # Switches
+    ADDR_KEY     = "0xFF200050"   # Push buttons
+
+    # Tabela de segmentos para display 7-seg (0-9 e A-F)
+    HEX_TABLE = [0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07,
+                 0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71]
+
+    def __init__(self):
+        self.codigo = []
+        self.label_counter = 0
+        self.data_section = []
+        self.resultados_count = 0
+        self.mem_label = "mem_storage"
+        self.res_labels = []
+        self.double_constants = {}  # {valor_str: label}
+        self.expr_count = 0
+
+    def _nova_label(self, prefixo="L"):
+        """Gera uma label única."""
+        self.label_counter += 1
+        return f"{prefixo}_{self.label_counter}"
+
+    def _double_to_hex(self, valor_str):
+        """
+        Converte um número real (string) para representação IEEE 754 de 64 bits.
+        Retorna (word_low, word_high) para uso com .word no Assembly.
+        """
+        valor = float(valor_str)
+        # Empacota como double IEEE 754 (little-endian)
+        packed = struct.pack('<d', valor)
+        word_low = struct.unpack('<I', packed[0:4])[0]
+        word_high = struct.unpack('<I', packed[4:8])[0]
+        return word_low, word_high
+
+    def _registrar_constante(self, valor_str):
+        """Registra uma constante double na seção de dados e retorna a label."""
+        if valor_str not in self.double_constants:
+            label = f"const_double_{len(self.double_constants)}"
+            self.double_constants[valor_str] = label
+        return self.double_constants[valor_str]
+
+    def gerarAssembly(self, todas_expressoes_tokens):
+        """
+        Função principal de geração de Assembly.
+        Recebe uma lista de listas de tokens (uma por linha/expressão).
+        Retorna o código Assembly completo como string.
+        """
+        self.codigo = []
+        self.data_section = []
+        self.double_constants = {}
+        self.label_counter = 0
+        self.resultados_count = 0
+        self.expr_count = 0
+
+        # Cabeçalho do programa Assembly
+        self._gerar_cabecalho()
+
+        # Gerar código para cada expressão
+        total_expressoes = sum(1 for t in todas_expressoes_tokens if t and not any(tk.tipo == TOKEN_INVALIDO for tk in t))
+        expr_geradas = 0
+
+        for idx, tokens in enumerate(todas_expressoes_tokens):
+            if not tokens:
+                continue
+            tem_invalido = any(t.tipo == TOKEN_INVALIDO for t in tokens)
+            if tem_invalido:
+                self.codigo.append(f"    @ Expressão {idx + 1} ignorada (contém tokens inválidos)")
+                self.codigo.append("")
+                continue
+
+            self.expr_count += 1
+            expr_geradas += 1
+            self.codigo.append(f"    @ ========== Expressão {idx + 1} ==========")
+            self._gerar_expressao(tokens)
+            self.codigo.append("")
+
+            self._gerar_salvar_resultado()
+            self._gerar_exibir_resultado_hex()
+
+            # Esperar KEY0 entre expressões (exceto na última)
+            if expr_geradas < total_expressoes:
+                self.codigo.append("    @ Pressione KEY0 para próxima expressão")
+                self.codigo.append("    BL wait_key")
+            self.codigo.append("")
+
+        # Fim do programa
+        self._gerar_rodape()
+
+        # Gerar seção de dados
+        self._gerar_secao_dados()
+
+        # Montar código final
+        codigo_final = "\n".join(self.codigo)
+        return codigo_final
+
+    def _gerar_cabecalho(self):
+        """Gera o cabeçalho do programa Assembly."""
+        self.codigo.extend([
+            "@ =============================================================================",
+            "@ Código Assembly ARMv7 - Gerado pelo Analisador Léxico",
+            "@ Compatível com CPUlator DE1-SoC (v16.1)",
+            "@ =============================================================================",
+            "@ Instituição: PUCPR - Pontifícia Universidade Católica do Paraná",
+            "@ Disciplina:  Construção de Interpretadores",
+            "@ Professor:   Frank Coelho de Alcantara",
+            "@ Grupo:       Equipe 05",
+            "@ =============================================================================",
+            "",
+            ".text",
+            ".global _start",
+            "",
+            "_start:",
+            "    @ Inicializar stack pointer",
+            "    LDR SP, =0x20000",
+            "",
+            "    @ Habilitar VFP (coprocessador de ponto flutuante)",
+            "    MRC p15, 0, R0, c1, c0, 2",
+            "    ORR R0, R0, #0xF00000      @ Habilitar acesso a CP10 e CP11",
+            "    MCR p15, 0, R0, c1, c0, 2",
+            "    MOV R0, #0x40000000         @ Setar EN bit no FPEXC",
+            "    VMSR FPEXC, R0",
+            "",
+            "    @ Inicializar ponteiro de resultados",
+            "    LDR R8, =resultados         @ R8 = ponteiro para array de resultados",
+            "    MOV R9, #0                   @ R9 = contador de resultados",
+            "",
+            "    @ Inicializar memória (MEM)",
+            "    LDR R10, =mem_storage        @ R10 = ponteiro para memória MEM",
+            "",
+        ])
+
+    def _gerar_expressao(self, tokens):
+        """
+        Gera código Assembly para uma expressão RPN completa.
+        Usa a pilha de hardware (SP) para empilhar valores double (8 bytes cada).
+        Registradores VFP d0-d7 são usados como temporários.
+        """
+        i = [0]  # Usar lista para permitir modificação em closure
+
+        def processar(tokens_list):
+            while i[0] < len(tokens_list):
+                token = tokens_list[i[0]]
+
+                if token.tipo == TOKEN_ABRE_PAR:
+                    i[0] += 1
+                    processar(tokens_list)
+                    continue
+
+                elif token.tipo == TOKEN_FECHA_PAR:
+                    i[0] += 1
+                    return
+
+                elif token.tipo == TOKEN_NUMERO:
+                    # Carregar constante double e empilhar
+                    label = self._registrar_constante(token.valor)
+                    self.codigo.append(f"    @ Empilhar número {token.valor}")
+                    self.codigo.append(f"    LDR R0, ={label}")
+                    self.codigo.append(f"    VLDR D0, [R0]")
+                    self.codigo.append(f"    SUB SP, SP, #8")
+                    self.codigo.append(f"    VSTR D0, [SP]")
+                    i[0] += 1
+
+                elif token.tipo == TOKEN_OPERADOR:
+                    self._gerar_operacao(token.valor)
+                    i[0] += 1
+
+                elif token.tipo == TOKEN_RES:
+                    # (N RES) - pegar N da pilha, buscar resultado anterior
+                    self._gerar_res()
+                    i[0] += 1
+
+                elif token.tipo == TOKEN_MEM:
+                    self._gerar_mem(tokens_list, i[0])
+                    i[0] += 1
+
+                else:
+                    i[0] += 1
+
+        processar(tokens)
+
+    def _gerar_operacao(self, op):
+        """Gera código Assembly para uma operação aritmética."""
+        self.codigo.append(f"    @ Operação: {op}")
+        # Desempilhar B (topo) e A
+        self.codigo.append(f"    VLDR D1, [SP]          @ B = topo da pilha")
+        self.codigo.append(f"    ADD SP, SP, #8")
+        self.codigo.append(f"    VLDR D0, [SP]          @ A = segundo da pilha")
+        self.codigo.append(f"    ADD SP, SP, #8")
+
+        if op == '+':
+            self.codigo.append(f"    VADD.F64 D2, D0, D1   @ D2 = A + B")
+        elif op == '-':
+            self.codigo.append(f"    VSUB.F64 D2, D0, D1   @ D2 = A - B")
+        elif op == '*':
+            self.codigo.append(f"    VMUL.F64 D2, D0, D1   @ D2 = A * B")
+        elif op == '/':
+            self.codigo.append(f"    VDIV.F64 D2, D0, D1   @ D2 = A / B")
+        elif op == '//':
+            # Divisão inteira: converter para int, dividir, converter de volta
+            label_loop = self._nova_label("div_int_loop")
+            label_end = self._nova_label("div_int_end")
+            self.codigo.extend([
+                f"    @ Divisão inteira: converter para inteiro, dividir",
+                f"    VCVT.S32.F64 S0, D0   @ S0 = (int)A",
+                f"    VCVT.S32.F64 S1, D1   @ S1 = (int)B",
+                f"    VMOV R0, S0            @ R0 = (int)A",
+                f"    VMOV R1, S1            @ R1 = (int)B",
+                f"    @ Divisão inteira por subtração repetida",
+                f"    MOV R2, #0             @ R2 = quociente",
+                f"    CMP R0, #0",
+                f"    RSBLT R0, R0, #0       @ abs(A)",
+                f"    CMP R1, #0",
+                f"    RSBLT R1, R1, #0       @ abs(B)",
+                f"{label_loop}:",
+                f"    CMP R0, R1",
+                f"    BLT {label_end}",
+                f"    SUB R0, R0, R1",
+                f"    ADD R2, R2, #1",
+                f"    B {label_loop}",
+                f"{label_end}:",
+                f"    VMOV S0, R2",
+                f"    VCVT.F64.S32 D2, S0   @ D2 = resultado como double",
+            ])
+        elif op == '%':
+            # Resto da divisão inteira
+            label_loop = self._nova_label("mod_loop")
+            label_end = self._nova_label("mod_end")
+            self.codigo.extend([
+                f"    @ Resto da divisão inteira",
+                f"    VCVT.S32.F64 S0, D0   @ S0 = (int)A",
+                f"    VCVT.S32.F64 S1, D1   @ S1 = (int)B",
+                f"    VMOV R0, S0            @ R0 = (int)A",
+                f"    VMOV R1, S1            @ R1 = (int)B",
+                f"    @ Módulo por subtração repetida",
+                f"{label_loop}:",
+                f"    CMP R0, R1",
+                f"    BLT {label_end}",
+                f"    SUB R0, R0, R1",
+                f"    B {label_loop}",
+                f"{label_end}:",
+                f"    VMOV S0, R0            @ S0 = resto",
+                f"    VCVT.F64.S32 D2, S0   @ D2 = resultado como double",
+            ])
+        elif op == '^':
+            # Potenciação: A^B onde B é inteiro positivo
+            label_loop = self._nova_label("pow_loop")
+            label_end = self._nova_label("pow_end")
+            one_label = self._registrar_constante("1.0")
+            self.codigo.extend([
+                f"    @ Potenciação: A^B (B inteiro positivo)",
+                f"    VCVT.S32.F64 S1, D1   @ S1 = (int)B",
+                f"    VMOV R1, S1            @ R1 = expoente",
+                f"    LDR R0, ={one_label}",
+                f"    VLDR D2, [R0]          @ D2 = 1.0 (acumulador)",
+                f"    CMP R1, #0",
+                f"    BLE {label_end}",
+                f"{label_loop}:",
+                f"    VMUL.F64 D2, D2, D0   @ D2 = D2 * A",
+                f"    SUBS R1, R1, #1",
+                f"    BNE {label_loop}",
+                f"{label_end}:",
+            ])
+
+        # Empilhar resultado
+        self.codigo.append(f"    SUB SP, SP, #8")
+        self.codigo.append(f"    VSTR D2, [SP]          @ Empilhar resultado")
+
+    def _gerar_res(self):
+        """Gera Assembly para comando RES: (N RES)."""
+        self.codigo.extend([
+            f"    @ Comando RES: buscar resultado anterior",
+            f"    VLDR D0, [SP]          @ D0 = N (índice)",
+            f"    ADD SP, SP, #8         @ Desempilhar N",
+            f"    VCVT.S32.F64 S0, D0   @ Converter para inteiro",
+            f"    VMOV R0, S0            @ R0 = N",
+            f"    @ Calcular endereço: resultados + (R9 - R0) * 8",
+            f"    SUB R1, R9, R0         @ R1 = total_resultados - N",
+            f"    LSL R1, R1, #3         @ R1 = R1 * 8 (cada double = 8 bytes)",
+            f"    ADD R1, R8, R1         @ R1 = endereço do resultado",
+            f"    VLDR D2, [R1]          @ D2 = resultado buscado",
+            f"    SUB SP, SP, #8",
+            f"    VSTR D2, [SP]          @ Empilhar resultado buscado",
+        ])
+
+    def _gerar_mem(self, tokens, pos):
+        """Gera Assembly para comando MEM: (V MEM) ou (MEM)."""
+        # Verificar se é (V MEM) ou (MEM) checando se há valor na pilha antes
+        # Heurística: se o token anterior é número ou fecha_paren, é (V MEM)
+        is_store = False
+        if pos > 0:
+            prev = tokens[pos - 1]
+            if prev.tipo in (TOKEN_NUMERO, TOKEN_FECHA_PAR):
+                is_store = True
+
+        if is_store:
+            self.codigo.extend([
+                f"    @ Comando MEM: armazenar valor",
+                f"    VLDR D0, [SP]          @ D0 = valor no topo (não desempilha)",
+                f"    VSTR D0, [R10]         @ Salvar na memória MEM",
+            ])
+        else:
+            self.codigo.extend([
+                f"    @ Comando MEM: recuperar valor",
+                f"    VLDR D0, [R10]         @ D0 = valor da memória",
+                f"    SUB SP, SP, #8",
+                f"    VSTR D0, [SP]          @ Empilhar valor recuperado",
+            ])
+
+    def _gerar_salvar_resultado(self):
+        """Salva o resultado da expressão no array de resultados."""
+        self.codigo.extend([
+            f"    @ Salvar resultado da expressão",
+            f"    VLDR D0, [SP]          @ D0 = resultado",
+            f"    ADD SP, SP, #8         @ Desempilhar",
+            f"    LSL R1, R9, #3         @ R1 = R9 * 8",
+            f"    ADD R1, R8, R1         @ R1 = endereço no array",
+            f"    VSTR D0, [R1]          @ Salvar resultado",
+            f"    ADD R9, R9, #1         @ Incrementar contador",
+        ])
+        self.resultados_count += 1
+
+    def _gerar_exibir_resultado_hex(self):
+        """
+        Gera código para exibir a parte inteira do resultado nos displays HEX.
+        Converte o double para inteiro e mostra nos displays 7-segmentos.
+        """
+        label_conv_loop = self._nova_label("hex_conv")
+        label_conv_end = self._nova_label("hex_end")
+        label_neg = self._nova_label("hex_neg")
+        label_pos = self._nova_label("hex_pos")
+
+        self.codigo.extend([
+            f"    @ Exibir resultado nos displays HEX",
+            f"    VCVT.S32.F64 S0, D0   @ Converter para inteiro",
+            f"    VMOV R0, S0            @ R0 = parte inteira do resultado",
+            f"    ",
+            f"    @ Verificar sinal",
+            f"    CMP R0, #0",
+            f"    BGE {label_pos}",
+            f"{label_neg}:",
+            f"    RSB R0, R0, #0         @ R0 = abs(resultado)",
+            f"{label_pos}:",
+            f"    @ Converter para BCD e exibir nos HEX displays",
+            f"    LDR R4, =hex_table     @ Tabela de segmentos",
+            f"    MOV R3, #0             @ Acumulador de segmentos",
+            f"    ",
+            f"    @ Dígito 0 (unidades)",
+            f"    MOV R1, #10",
+            f"    BL div_mod             @ R0=quociente, R2=resto",
+            f"    LDR R5, [R4, R2, LSL #2]  @ Segmento para dígito",
+            f"    ORR R3, R3, R5         @ HEX0",
+            f"    ",
+            f"    @ Dígito 1 (dezenas)",
+            f"    BL div_mod",
+            f"    LDR R5, [R4, R2, LSL #2]",
+            f"    ORR R3, R3, R5, LSL #8  @ HEX1",
+            f"    ",
+            f"    @ Dígito 2 (centenas)",
+            f"    BL div_mod",
+            f"    LDR R5, [R4, R2, LSL #2]",
+            f"    ORR R3, R3, R5, LSL #16 @ HEX2",
+            f"    ",
+            f"    @ Dígito 3 (milhares)",
+            f"    BL div_mod",
+            f"    LDR R5, [R4, R2, LSL #2]",
+            f"    ORR R3, R3, R5, LSL #24 @ HEX3",
+            f"    ",
+            f"    @ Escrever nos displays HEX3-HEX0",
+            f"    LDR R6, ={self.ADDR_HEX3_0}",
+            f"    STR R3, [R6]",
+            f"    ",
+            f"    @ Acender LEDs com padrão indicando expressão processada",
+            f"    LDR R6, ={self.ADDR_LEDR}",
+            f"    MOV R1, #1",
+            f"    LSL R1, R1, R9          @ LED correspondente à expressão",
+            f"    STR R1, [R6]",
+        ])
+
+    def _gerar_rodape(self):
+        """Gera o final do programa Assembly."""
+        self.codigo.extend([
+            "    @ ========== Fim do programa ==========",
+            "    @ Loop infinito (programa concluído)",
+            "halt:",
+            "    B halt",
+            "",
+            "@ ----- Sub-rotina: esperar botão KEY0 -----",
+            "wait_key:",
+            "    PUSH {R0-R1, LR}",
+            "    LDR R1, =0xFF200050    @ KEY data register",
+            "wait_key_press:",
+            "    LDR R0, [R1]",
+            "    TST R0, #1             @ Bit0=1 significa NÃO pressionado",
+            "    BNE wait_key_press     @ Ainda não apertou, esperar",
+            "    @ KEY0 pressionado, agora esperar soltar",
+            "wait_key_release:",
+            "    LDR R0, [R1]",
+            "    TST R0, #1",
+            "    BEQ wait_key_release   @ Ainda apertado, esperar soltar",
+            "    POP {R0-R1, PC}",
+            "",
+            "@ ----- Sub-rotina: divisão e módulo -----",
+            "@ Entrada: R0 = dividendo, R1 = divisor",
+            "@ Saída: R0 = quociente, R2 = resto",
+            "div_mod:",
+            "    PUSH {LR}",
+            "    MOV R2, R0             @ R2 = dividendo (será o resto)",
+            "    MOV R0, #0             @ R0 = quociente",
+            "div_mod_loop:",
+            "    CMP R2, R1",
+            "    BLT div_mod_end",
+            "    SUB R2, R2, R1",
+            "    ADD R0, R0, #1",
+            "    B div_mod_loop",
+            "div_mod_end:",
+            "    POP {PC}",
+            "",
+        ])
+
+    def _gerar_secao_dados(self):
+        """Gera a seção .data com constantes e variáveis."""
+        self.codigo.extend([
+            "@ =============================================================================",
+            "@ Seção de dados",
+            "@ =============================================================================",
+            ".data",
+            "",
+            "@ Tabela de segmentos para display 7-seg (0-F)",
+            "hex_table:",
+        ])
+
+        for i, val in enumerate(self.HEX_TABLE):
+            self.codigo.append(f"    .word 0x{val:02X}    @ {i:X}")
+
+        self.codigo.extend([
+            "",
+            ".align 3                   @ Alinhar em 8 bytes para doubles",
+            "@ Constantes double (IEEE 754 - 64 bits)",
+        ])
+
+        for valor_str, label in self.double_constants.items():
+            low, high = self._double_to_hex(valor_str)
+            self.codigo.extend([
+                f"{label}:    @ {valor_str}",
+                f"    .word 0x{low:08X}    @ low word",
+                f"    .word 0x{high:08X}    @ high word",
+            ])
+
+        self.codigo.extend([
+            "",
+            "@ Array de resultados (até 64 expressões)",
+            "resultados:",
+            "    .space 512             @ 64 * 8 bytes",
+            "",
+            "@ Memória MEM (1 double)",
+            "mem_storage:",
+            "    .space 8",
+            "",
+        ])
+
