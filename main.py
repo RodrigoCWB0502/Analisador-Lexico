@@ -2,7 +2,7 @@
 =============================================================================
 Analisador Léxico e Gerador de Assembly ARMv7 - Fase 1
 =============================================================================
-Instituição: PUCPR - Pontifícia Universade Católica do Paraná
+Instituição: PUCPR - Pontifícia Universidade Católica do Paraná
 Disciplina:  Construção de Interpretadores
 Professor:   Professor Frank Coelho de Alcantara
 
@@ -297,3 +297,193 @@ class AnalisadorLexico:
         erro_msg = f"Token inválido '{valor}' na posição {inicio}"
         self.erros.append(erro_msg)
         self.tokens.append(Token(TOKEN_INVALIDO, valor, inicio))
+
+
+# =============================================================================
+# PARTE 2 - EXECUÇÃO DE EXPRESSÕES (para validação/testes)
+# =============================================================================
+
+class ExecutorExpressao:
+    """
+    Executa expressões RPN a partir dos tokens para fins de VALIDAÇÃO.
+
+    NOTA: Esta classe é usada apenas para TESTES e VALIDAÇÃO.
+    Os cálculos reais são feitos no Assembly gerado.
+
+    Gerencia memória (MEM) e histórico de resultados (RES).
+    """
+
+    def __init__(self):
+        self.resultados = []      # Histórico de resultados
+        self.memoria = {}         # Dicionário de memória {nome: valor}
+        self.mem_valor = None     # Último valor armazenado com MEM
+
+    def executarExpressao(self, tokens):
+        """
+        Executa uma expressão RPN a partir de uma lista de tokens.
+        Usa uma pilha para avaliar as expressões.
+
+        IMPORTANTE: Esta função existe apenas para VALIDAÇÃO.
+        O cálculo real é feito no Assembly ARMv7 gerado.
+        """
+        try:
+            resultado = self._avaliar_tokens(tokens, 0)
+            if resultado is not None:
+                self.resultados.append(resultado)
+            return resultado
+        except Exception as e:
+            print(f"  [ERRO na execução] {e}")
+            return None
+
+    def _avaliar_tokens(self, tokens, inicio):
+        """
+        Avalia recursivamente os tokens de uma expressão RPN.
+        Retorna (valor, próximo_índice).
+        """
+        pilha = []
+        i = inicio
+
+        while i < len(tokens):
+            token = tokens[i]
+
+            if token.tipo == TOKEN_ABRE_PAR:
+                # Início de sub-expressão - avaliar recursivamente
+                val, i = self._avaliar_subexpressao(tokens, i + 1)
+                if val is not None:
+                    pilha.append(val)
+                continue
+
+            elif token.tipo == TOKEN_NUMERO:
+                pilha.append(float(token.valor))
+                i += 1
+
+            elif token.tipo == TOKEN_RES:
+                # (N RES) - recupera o N-ésimo resultado anterior
+                if len(pilha) >= 1:
+                    n = int(pilha.pop())
+                    if 0 < n <= len(self.resultados):
+                        pilha.append(self.resultados[-n])
+                    else:
+                        print(f"  [ERRO] RES: índice {n} fora do intervalo")
+                        return None
+                i += 1
+
+            elif token.tipo == TOKEN_MEM:
+                if len(pilha) >= 1:
+                    # (V MEM) - armazena valor na memória
+                    self.mem_valor = pilha[-1]  # Mantém na pilha também
+                else:
+                    # (MEM) - recupera valor da memória
+                    if self.mem_valor is not None:
+                        pilha.append(self.mem_valor)
+                    else:
+                        print("  [ERRO] MEM: nenhum valor armazenado")
+                        return None
+                i += 1
+
+            elif token.tipo == TOKEN_OPERADOR:
+                if len(pilha) < 2:
+                    print(f"  [ERRO] Operador '{token.valor}' sem operandos suficientes")
+                    return None
+                b = pilha.pop()
+                a = pilha.pop()
+                resultado = self._aplicar_operacao(a, b, token.valor)
+                if resultado is not None:
+                    pilha.append(resultado)
+                i += 1
+
+            elif token.tipo == TOKEN_FECHA_PAR:
+                i += 1
+                break
+
+            else:
+                i += 1
+
+        if pilha:
+            return pilha[-1]
+        return None
+
+    def _avaliar_subexpressao(self, tokens, inicio):
+        """Avalia uma sub-expressão delimitada por parênteses."""
+        pilha = []
+        i = inicio
+
+        while i < len(tokens):
+            token = tokens[i]
+
+            if token.tipo == TOKEN_ABRE_PAR:
+                val, i = self._avaliar_subexpressao(tokens, i + 1)
+                if val is not None:
+                    pilha.append(val)
+                continue
+
+            elif token.tipo == TOKEN_FECHA_PAR:
+                i += 1
+                if pilha:
+                    return pilha[-1], i
+                return None, i
+
+            elif token.tipo == TOKEN_NUMERO:
+                pilha.append(float(token.valor))
+                i += 1
+
+            elif token.tipo == TOKEN_RES:
+                if len(pilha) >= 1:
+                    n = int(pilha.pop())
+                    if 0 < n <= len(self.resultados):
+                        pilha.append(self.resultados[-n])
+                    else:
+                        print(f"  [ERRO] RES: índice {n} fora do intervalo")
+                i += 1
+
+            elif token.tipo == TOKEN_MEM:
+                if len(pilha) >= 1:
+                    self.mem_valor = pilha[-1]
+                else:
+                    if self.mem_valor is not None:
+                        pilha.append(self.mem_valor)
+                i += 1
+
+            elif token.tipo == TOKEN_OPERADOR:
+                if len(pilha) >= 2:
+                    b = pilha.pop()
+                    a = pilha.pop()
+                    resultado = self._aplicar_operacao(a, b, token.valor)
+                    if resultado is not None:
+                        pilha.append(resultado)
+                i += 1
+
+            else:
+                i += 1
+
+        if pilha:
+            return pilha[-1], i
+        return None, i
+
+    def _aplicar_operacao(self, a, b, op):
+        """Aplica uma operação aritmética (apenas para validação)."""
+        if op == '+':
+            return a + b
+        elif op == '-':
+            return a - b
+        elif op == '*':
+            return a * b
+        elif op == '/':
+            if b == 0:
+                print("  [ERRO] Divisão por zero")
+                return None
+            return a / b
+        elif op == '//':
+            if b == 0:
+                print("  [ERRO] Divisão inteira por zero")
+                return None
+            return float(int(a) // int(b))
+        elif op == '%':
+            if b == 0:
+                print("  [ERRO] Módulo por zero")
+                return None
+            return float(int(a) % int(b))
+        elif op == '^':
+            return a ** int(b)
+        return None
+
