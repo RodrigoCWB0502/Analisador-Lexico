@@ -1,0 +1,657 @@
+[
+  {
+    "linha": 1,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "1.5",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.5",
+        "posicao": 5
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 9
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 10
+      }
+    ]
+  },
+  {
+    "linha": 2,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "8.0",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 5
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "/",
+        "posicao": 9
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 10
+      }
+    ]
+  },
+  {
+    "linha": 3,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "3.0",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "4",
+        "posicao": 5
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "^",
+        "posicao": 7
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 8
+      }
+    ]
+  },
+  {
+    "linha": 4,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "25",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "7",
+        "posicao": 4
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "//",
+        "posicao": 6
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 8
+      }
+    ]
+  },
+  {
+    "linha": 5,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "25",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "7",
+        "posicao": 4
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "%",
+        "posicao": 6
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 7
+      }
+    ]
+  },
+  {
+    "linha": 6,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 2
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "3.0",
+        "posicao": 6
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 10
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 11
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 13
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "4.0",
+        "posicao": 14
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "5.0",
+        "posicao": 18
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 22
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 23
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "*",
+        "posicao": 25
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 26
+      }
+    ]
+  },
+  {
+    "linha": 7,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 2
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "1.0",
+        "posicao": 3
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 7
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 11
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 12
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 14
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "3.0",
+        "posicao": 15
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "4.0",
+        "posicao": 19
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 23
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 24
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 25
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "*",
+        "posicao": 27
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 28
+      }
+    ]
+  },
+  {
+    "linha": 8,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "10.0",
+        "posicao": 2
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "3.0",
+        "posicao": 7
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "/",
+        "posicao": 11
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 12
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 14
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 18
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 19
+      }
+    ]
+  },
+  {
+    "linha": 9,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "50.0",
+        "posicao": 1
+      },
+      {
+        "tipo": "MEM",
+        "valor": "MEM",
+        "posicao": 6
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 9
+      }
+    ]
+  },
+  {
+    "linha": 10,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "MEM",
+        "valor": "MEM",
+        "posicao": 2
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 5
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "10.0",
+        "posicao": 7
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 12
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 13
+      }
+    ]
+  },
+  {
+    "linha": 11,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "1",
+        "posicao": 1
+      },
+      {
+        "tipo": "RES",
+        "valor": "RES",
+        "posicao": 3
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 6
+      }
+    ]
+  },
+  {
+    "linha": 12,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2",
+        "posicao": 1
+      },
+      {
+        "tipo": "RES",
+        "valor": "RES",
+        "posicao": 3
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 6
+      }
+    ]
+  },
+  {
+    "linha": 13,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "5.5",
+        "posicao": 2
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "4.5",
+        "posicao": 6
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "+",
+        "posicao": 10
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 11
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 13
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "3.0",
+        "posicao": 14
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 18
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "-",
+        "posicao": 22
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 23
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "/",
+        "posicao": 25
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 26
+      }
+    ]
+  },
+  {
+    "linha": 14,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "100.0",
+        "posicao": 1
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 7
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "10",
+        "posicao": 8
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2",
+        "posicao": 11
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "^",
+        "posicao": 13
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 14
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "/",
+        "posicao": 16
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 17
+      }
+    ]
+  },
+  {
+    "linha": 15,
+    "tokens": [
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 0
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 1
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "8.0",
+        "posicao": 2
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 6
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "*",
+        "posicao": 10
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 11
+      },
+      {
+        "tipo": "ABRE_PAREN",
+        "valor": "(",
+        "posicao": 13
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "4.0",
+        "posicao": 14
+      },
+      {
+        "tipo": "NUMERO",
+        "valor": "2.0",
+        "posicao": 18
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "*",
+        "posicao": 22
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 23
+      },
+      {
+        "tipo": "OPERADOR",
+        "valor": "-",
+        "posicao": 25
+      },
+      {
+        "tipo": "FECHA_PAREN",
+        "valor": ")",
+        "posicao": 26
+      }
+    ]
+  }
+]
