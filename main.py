@@ -487,6 +487,7 @@ class ExecutorExpressao:
             return a ** int(b)
         return None
 
+
 # =============================================================================
 # PARTE 3 - GERADOR DE ASSEMBLY ARMv7
 # =============================================================================
@@ -967,3 +968,183 @@ class GeradorAssembly:
             "",
         ])
 
+
+# =============================================================================
+# PARTE 4 - LEITURA DE ARQUIVO E INTERFACE
+# =============================================================================
+
+def lerArquivo(nomeArquivo):
+    """
+    Lê um arquivo de texto e retorna uma lista de linhas.
+    Verifica erros de abertura e exibe mensagens claras.
+    """
+    try:
+        with open(nomeArquivo, 'r', encoding='utf-8') as f:
+            linhas = f.readlines()
+        # Remover linhas vazias e whitespace
+        linhas = [linha.strip() for linha in linhas if linha.strip()]
+        return linhas
+    except FileNotFoundError:
+        print(f"[ERRO] Arquivo '{nomeArquivo}' não encontrado.")
+        sys.exit(1)
+    except PermissionError:
+        print(f"[ERRO] Sem permissão para ler '{nomeArquivo}'.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"[ERRO] Falha ao ler '{nomeArquivo}': {e}")
+        sys.exit(1)
+
+
+def exibirResultados(resultados):
+    """
+    Exibe os resultados das expressões com formato claro.
+    Uma casa decimal para números reais.
+    """
+    print("\n" + "=" * 60)
+    print("RESULTADOS DAS EXPRESSÕES (validação Python)")
+    print("=" * 60)
+    for i, res in enumerate(resultados):
+        if res is not None:
+            # Verificar se é inteiro
+            if res == int(res):
+                print(f"  Expressão {i + 1}: {int(res)}")
+            else:
+                print(f"  Expressão {i + 1}: {res:.6f}")
+        else:
+            print(f"  Expressão {i + 1}: [ERRO]")
+    print("=" * 60)
+
+
+def salvar_tokens(todos_tokens, nome_arquivo):
+    """
+    Salva os tokens gerados em um arquivo .txt no formato JSON.
+    Apenas os tokens da última execução ficam salvos.
+    """
+    dados = []
+    for idx, tokens in enumerate(todos_tokens):
+        linha_tokens = []
+        for t in tokens:
+            linha_tokens.append(t.to_dict())
+        dados.append({
+            "linha": idx + 1,
+            "tokens": linha_tokens
+        })
+
+    nome_saida = nome_arquivo.replace('.txt', '_tokens.json')
+    if nome_saida == nome_arquivo:
+        nome_saida = "tokens_saida.json"
+
+    with open(nome_saida, 'w', encoding='utf-8') as f:
+        json.dump(dados, f, indent=2, ensure_ascii=False)
+
+    print(f"\n[INFO] Tokens salvos em '{nome_saida}'")
+    return nome_saida
+
+
+def salvar_assembly(codigo_assembly, nome_arquivo):
+    """Salva o código Assembly gerado em um arquivo .s"""
+    nome_saida = nome_arquivo.replace('.txt', '.s')
+    if nome_saida == nome_arquivo:
+        nome_saida = "saida.s"
+
+    with open(nome_saida, 'w', encoding='utf-8') as f:
+        f.write(codigo_assembly)
+
+    print(f"[INFO] Assembly salvo em '{nome_saida}'")
+    return nome_saida
+
+
+# =============================================================================
+# FUNÇÃO MAIN
+# =============================================================================
+
+def main():
+    """
+    Função principal do programa.
+    Gerencia a execução: leitura -> análise léxica -> execução -> assembly -> saída.
+    """
+    # Verificar argumento de linha de comando
+    if len(sys.argv) < 2:
+        print("Uso: python main.py <arquivo_teste.txt>")
+        print("Exemplo: python main.py teste1.txt")
+        sys.exit(1)
+
+    nome_arquivo = sys.argv[1]
+
+    print("=" * 60)
+    print("ANALISADOR LÉXICO E GERADOR DE ASSEMBLY ARMv7")
+    print("Equipe 05 - Fase 1")
+    print("=" * 60)
+    print(f"\nArquivo de entrada: {nome_arquivo}")
+
+    # 1. Ler arquivo
+    linhas = lerArquivo(nome_arquivo)
+    print(f"Linhas lidas: {len(linhas)}")
+
+    # 2. Análise léxica
+    analisador = AnalisadorLexico()
+    todos_tokens = []
+    todos_erros = []
+
+    print("\n--- ANÁLISE LÉXICA ---")
+    for i, linha in enumerate(linhas):
+        print(f"\nLinha {i + 1}: {linha}")
+        tokens = analisador.parseExpressao(linha)
+        todos_tokens.append(tokens)
+
+        # Exibir tokens
+        for token in tokens:
+            print(f"  {token}")
+
+        # Exibir erros
+        if analisador.erros:
+            for erro in analisador.erros:
+                print(f"  [ERRO LÉXICO] {erro}")
+            todos_erros.extend(analisador.erros)
+
+    # 3. Salvar tokens
+    salvar_tokens(todos_tokens, nome_arquivo)
+
+    # 4. Executar expressões (VALIDAÇÃO apenas)
+    print("\n--- EXECUÇÃO (VALIDAÇÃO PYTHON) ---")
+    executor = ExecutorExpressao()
+    resultados = []
+
+    for i, tokens in enumerate(todos_tokens):
+        # Pular linhas com erros
+        tem_erro = any(t.tipo == TOKEN_INVALIDO for t in tokens)
+        if tem_erro:
+            print(f"  Expressão {i + 1}: IGNORADA (tokens inválidos)")
+            resultados.append(None)
+            continue
+
+        resultado = executor.executarExpressao(tokens)
+        resultados.append(resultado)
+        if resultado is not None:
+            print(f"  Expressão {i + 1}: {resultado}")
+
+    # 5. Exibir resultados
+    exibirResultados(resultados)
+
+    # 6. Gerar Assembly
+    print("\n--- GERAÇÃO DE ASSEMBLY ARMv7 ---")
+    gerador = GeradorAssembly()
+    codigo_assembly = gerador.gerarAssembly(todos_tokens)
+    nome_asm = salvar_assembly(codigo_assembly, nome_arquivo)
+
+    # 7. Resumo final
+    print("\n" + "=" * 60)
+    print("RESUMO")
+    print("=" * 60)
+    print(f"  Expressões processadas: {len(linhas)}")
+    print(f"  Erros léxicos: {len(todos_erros)}")
+    print(f"  Código Assembly: {nome_asm}")
+    if todos_erros:
+        print("\n  Erros encontrados:")
+        for erro in todos_erros:
+            print(f"    - {erro}")
+    print("=" * 60)
+
+
+if __name__ == "__main__":
+    main()
