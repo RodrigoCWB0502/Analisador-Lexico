@@ -593,6 +593,14 @@ class GeradorAssembly:
                 self.codigo.append("    BL wait_key")
             self.codigo.append("")
 
+            # A cada 3 expressões, forçar despejo do literal pool
+            # Isso evita que LDR Rx, =label fique fora de alcance (máx 4095 bytes)
+            if expr_geradas % 3 == 0:
+                self.codigo.append("    B _skip_ltorg_" + str(expr_geradas))
+                self.codigo.append("    .ltorg")
+                self.codigo.append("_skip_ltorg_" + str(expr_geradas) + ":")
+                self.codigo.append("")
+
         # Fim do programa
         self._gerar_rodape()
 
@@ -755,13 +763,13 @@ class GeradorAssembly:
             # Potenciação: A^B onde B é inteiro positivo
             label_loop = self._nova_label("pow_loop")
             label_end = self._nova_label("pow_end")
-            one_label = self._registrar_constante("1.0")
             self.codigo.extend([
                 f"    @ Potenciação: A^B (B inteiro positivo)",
-                f"    VCVT.S32.F64 S1, D1   @ S1 = (int)B",
-                f"    VMOV R1, S1            @ R1 = expoente",
-                f"    LDR R0, ={one_label}",
-                f"    VLDR D2, [R0]          @ D2 = 1.0 (acumulador)",
+                f"    VCVT.S32.F64 S2, D1   @ S2 = (int)B  [S2=lower D1, preserva D0]",
+                f"    VMOV R1, S2            @ R1 = expoente",
+                f"    MOV R0, #1",
+                f"    VMOV S4, R0            @ S4 = lower D2 (nao alias D0!)",
+                f"    VCVT.F64.S32 D2, S4   @ D2 = 1.0 (acumulador, D0 preservado)",
                 f"    CMP R1, #0",
                 f"    BLE {label_end}",
                 f"{label_loop}:",
