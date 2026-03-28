@@ -251,6 +251,10 @@ hex_pos_12:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_3
+    .ltorg
+_skip_ltorg_3:
+
     @ ========== Expressão 4 ==========
     @ Empilhar número 20.0
     LDR R0, =const_double_6
@@ -505,6 +509,10 @@ hex_pos_28:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_6
+    .ltorg
+_skip_ltorg_6:
+
     @ ========== Expressão 7 ==========
     @ Empilhar número 2.0
     LDR R0, =const_double_1
@@ -522,10 +530,11 @@ hex_pos_28:
     VLDR D0, [SP]          @ A = segundo da pilha
     ADD SP, SP, #8
     @ Potenciação: A^B (B inteiro positivo)
-    VCVT.S32.F64 S1, D1   @ S1 = (int)B
-    VMOV R1, S1            @ R1 = expoente
-    LDR R0, =const_double_10
-    VLDR D2, [R0]          @ D2 = 1.0 (acumulador)
+    VCVT.S32.F64 S2, D1   @ S2 = (int)B  [S2=lower D1, preserva D0]
+    VMOV R1, S2            @ R1 = expoente
+    MOV R0, #1
+    VMOV S4, R0            @ S4 = lower D2 (nao alias D0!)
+    VCVT.F64.S32 D2, S4   @ D2 = 1.0 (acumulador, D0 preservado)
     CMP R1, #0
     BLE pow_end_30
 pow_loop_29:
@@ -777,6 +786,10 @@ hex_pos_42:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_9
+    .ltorg
+_skip_ltorg_9:
+
     @ ========== Expressão 10 ==========
     @ Empilhar número 2.5
     LDR R0, =const_double_12
@@ -1000,6 +1013,10 @@ hex_pos_54:
     STR R1, [R6]
     @ Pressione KEY0 para próxima expressão
     BL wait_key
+
+    B _skip_ltorg_12
+    .ltorg
+_skip_ltorg_12:
 
     @ ========== Expressão 13 ==========
     @ Empilhar número 1
@@ -1245,6 +1262,10 @@ hex_pos_66:
     MOV R1, #1
     LSL R1, R1, R9          @ LED correspondente à expressão
     STR R1, [R6]
+
+    B _skip_ltorg_15
+    .ltorg
+_skip_ltorg_15:
 
     @ ========== Fim do programa ==========
     @ Loop infinito (programa concluído)

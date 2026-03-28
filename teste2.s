@@ -194,10 +194,11 @@ hex_pos_8:
     VLDR D0, [SP]          @ A = segundo da pilha
     ADD SP, SP, #8
     @ Potenciação: A^B (B inteiro positivo)
-    VCVT.S32.F64 S1, D1   @ S1 = (int)B
-    VMOV R1, S1            @ R1 = expoente
-    LDR R0, =const_double_6
-    VLDR D2, [R0]          @ D2 = 1.0 (acumulador)
+    VCVT.S32.F64 S2, D1   @ S2 = (int)B  [S2=lower D1, preserva D0]
+    VMOV R1, S2            @ R1 = expoente
+    MOV R0, #1
+    VMOV S4, R0            @ S4 = lower D2 (nao alias D0!)
+    VCVT.F64.S32 D2, S4   @ D2 = 1.0 (acumulador, D0 preservado)
     CMP R1, #0
     BLE pow_end_10
 pow_loop_9:
@@ -262,14 +263,18 @@ hex_pos_14:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_3
+    .ltorg
+_skip_ltorg_3:
+
     @ ========== Expressão 4 ==========
     @ Empilhar número 25
-    LDR R0, =const_double_7
+    LDR R0, =const_double_6
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
     @ Empilhar número 7
-    LDR R0, =const_double_8
+    LDR R0, =const_double_7
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -357,12 +362,12 @@ hex_pos_20:
 
     @ ========== Expressão 5 ==========
     @ Empilhar número 25
-    LDR R0, =const_double_7
+    LDR R0, =const_double_6
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
     @ Empilhar número 7
-    LDR R0, =const_double_8
+    LDR R0, =const_double_7
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -462,12 +467,12 @@ hex_pos_26:
     SUB SP, SP, #8
     VSTR D2, [SP]          @ Empilhar resultado
     @ Empilhar número 4.0
-    LDR R0, =const_double_9
+    LDR R0, =const_double_8
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
     @ Empilhar número 5.0
-    LDR R0, =const_double_10
+    LDR R0, =const_double_9
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -542,9 +547,13 @@ hex_pos_30:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_6
+    .ltorg
+_skip_ltorg_6:
+
     @ ========== Expressão 7 ==========
     @ Empilhar número 1.0
-    LDR R0, =const_double_6
+    LDR R0, =const_double_10
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -567,7 +576,7 @@ hex_pos_30:
     SUB SP, SP, #8
     VSTR D0, [SP]
     @ Empilhar número 4.0
-    LDR R0, =const_double_9
+    LDR R0, =const_double_8
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -793,6 +802,10 @@ hex_pos_42:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_9
+    .ltorg
+_skip_ltorg_9:
+
     @ ========== Expressão 10 ==========
     @ Comando MEM: recuperar valor
     VLDR D0, [R10]         @ D0 = valor da memória
@@ -1012,6 +1025,10 @@ hex_pos_54:
     @ Pressione KEY0 para próxima expressão
     BL wait_key
 
+    B _skip_ltorg_12
+    .ltorg
+_skip_ltorg_12:
+
     @ ========== Expressão 13 ==========
     @ Empilhar número 5.5
     LDR R0, =const_double_15
@@ -1134,10 +1151,11 @@ hex_pos_58:
     VLDR D0, [SP]          @ A = segundo da pilha
     ADD SP, SP, #8
     @ Potenciação: A^B (B inteiro positivo)
-    VCVT.S32.F64 S1, D1   @ S1 = (int)B
-    VMOV R1, S1            @ R1 = expoente
-    LDR R0, =const_double_6
-    VLDR D2, [R0]          @ D2 = 1.0 (acumulador)
+    VCVT.S32.F64 S2, D1   @ S2 = (int)B  [S2=lower D1, preserva D0]
+    VMOV R1, S2            @ R1 = expoente
+    MOV R0, #1
+    VMOV S4, R0            @ S4 = lower D2 (nao alias D0!)
+    VCVT.F64.S32 D2, S4   @ D2 = 1.0 (acumulador, D0 preservado)
     CMP R1, #0
     BLE pow_end_60
 pow_loop_59:
@@ -1230,7 +1248,7 @@ hex_pos_64:
     SUB SP, SP, #8
     VSTR D2, [SP]          @ Empilhar resultado
     @ Empilhar número 4.0
-    LDR R0, =const_double_9
+    LDR R0, =const_double_8
     VLDR D0, [R0]
     SUB SP, SP, #8
     VSTR D0, [SP]
@@ -1307,6 +1325,10 @@ hex_pos_68:
     MOV R1, #1
     LSL R1, R1, R9          @ LED correspondente à expressão
     STR R1, [R6]
+
+    B _skip_ltorg_15
+    .ltorg
+_skip_ltorg_15:
 
     @ ========== Fim do programa ==========
     @ Loop infinito (programa concluído)
@@ -1388,21 +1410,21 @@ const_double_4:    @ 3.0
 const_double_5:    @ 4
     .word 0x00000000    @ low word
     .word 0x40100000    @ high word
-const_double_6:    @ 1.0
-    .word 0x00000000    @ low word
-    .word 0x3FF00000    @ high word
-const_double_7:    @ 25
+const_double_6:    @ 25
     .word 0x00000000    @ low word
     .word 0x40390000    @ high word
-const_double_8:    @ 7
+const_double_7:    @ 7
     .word 0x00000000    @ low word
     .word 0x401C0000    @ high word
-const_double_9:    @ 4.0
+const_double_8:    @ 4.0
     .word 0x00000000    @ low word
     .word 0x40100000    @ high word
-const_double_10:    @ 5.0
+const_double_9:    @ 5.0
     .word 0x00000000    @ low word
     .word 0x40140000    @ high word
+const_double_10:    @ 1.0
+    .word 0x00000000    @ low word
+    .word 0x3FF00000    @ high word
 const_double_11:    @ 10.0
     .word 0x00000000    @ low word
     .word 0x40240000    @ high word
